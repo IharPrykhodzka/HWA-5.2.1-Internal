@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">HWA 5.2.1 Registration</string>
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="loginBtn">LOGIN</string>
+    <string name="registrationBtn">REGISTRATION</string>
+</resources>
