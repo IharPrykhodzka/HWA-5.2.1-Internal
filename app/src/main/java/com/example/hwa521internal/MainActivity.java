@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -51,61 +50,71 @@ public class MainActivity extends AppCompatActivity {
                 BufferedWriter bw = null;
 
                 Log.d(LOG, "Нажал на кнопку регестрации");
+                Log.d(LOG, "login =" + fileLogin);
+                Log.d(LOG, "password =" + filePassword);
 
+                FileInputStream mFIP = null;
                 try {
-                    if (!filePassword.equals("")) {
-                        outputStream = openFileOutput(fileLogin, Context.MODE_PRIVATE);
-                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
-                        bw = new BufferedWriter(outputStreamWriter);
-                        Log.d(LOG, "Запись: " + filePassword);
-                        bw.write(fileLogin);
-                        bw.write("\n");
-                        bw.write(filePassword);
-
-//                        outputStream.write(fileContents.getBytes());
-
-                        Toast.makeText(MainActivity.this, fileLogin + " успешно зарегистрирован", Toast.LENGTH_LONG).show();
-                        Log.d(LOG, "Создание и запись логина и пароля");
-                    } else {
-                        Toast.makeText(MainActivity.this, "Убедитесь, что вы заполнели все строки", Toast.LENGTH_LONG).show();
-                        Log.d(LOG, "Пустой пароль");
-                    }
-                } catch (Exception e) {
+                    mFIP = openFileInput(fileLogin);
+                } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                    Toast.makeText(MainActivity.this, fileLogin + " " + filePassword, Toast.LENGTH_LONG).show();
-                    Log.d(LOG, "Ошибка создания и записи логина и пароля");
                 } finally {
-                    if (outputStream != null) {
+                    if (mFIP != null) {
                         try {
-                            outputStream.close();
-                            Log.d(LOG, "Закрыли поток outputStream");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            Log.d(LOG, "Ошибка закрытие патока outputStream");
-                        }
-                    }
-
-                    if (bw != null) {
-                        try {
-                            bw.close();
+                            mFIP.close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
                 }
+
+                if (mFIP == null) {
+
+                    try {
+                        if (!filePassword.equals("")) {
+                            String total = fileLogin + ";" + filePassword;
+                            outputStream = openFileOutput(fileLogin, Context.MODE_PRIVATE);
+                            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+                            bw = new BufferedWriter(outputStreamWriter);
+                            Log.d(LOG, "Запись: " + total);
+                            bw.write(total);
+
+                            Toast.makeText(MainActivity.this, fileLogin + " успешно зарегистрирован", Toast.LENGTH_LONG).show();
+                            Log.d(LOG, "Создание и запись логина и пароля");
+                        } else {
+                            Toast.makeText(MainActivity.this, "Убедитесь, что вы заполнели все строки", Toast.LENGTH_LONG).show();
+                            Log.d(LOG, "Пустой пароль");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, fileLogin + " " + filePassword, Toast.LENGTH_LONG).show();
+                        Log.d(LOG, "Ошибка создания и записи логина и пароля");
+                    } finally {
+                        if (bw != null) {
+                            try {
+                                bw.close();
+                                Log.d(LOG, "Закрыли поток BufferedWriter");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Log.d(LOG, "Ошибка закрытие патока BufferedWriter");
+                            }
+                        }
+
+                        if (outputStream != null) {
+                            try {
+                                outputStream.close();
+                                Log.d(LOG, "Закрыли поток outputStream");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Log.d(LOG, "Ошибка закрытие патока outputStream");
+                            }
+                        }
+                    }
+                }else {
+                    Toast.makeText(MainActivity.this, "Такой логин " + fileLogin + " уже существует.", Toast.LENGTH_LONG).show();
+                }
             }
         });
-
-
-
-
-
-
-
-
-
-
-
 
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
@@ -131,14 +140,14 @@ public class MainActivity extends AppCompatActivity {
 
                     while (line != null) {
                         result.append(line);
-                        result.append("\n");
+                        result.append(";");
                         line = reader.readLine();
                         Log.d(LOG, "Пробуем записать учетку в массив");
                     }
 
                     String text = result.toString();
                     Log.d(LOG, "Результат чтения: " + result.toString());
-                    mLoginPassword2 = text.split("\n");
+                    mLoginPassword2 = text.split(";");
                     mLoginPassword.addAll(Arrays.asList(mLoginPassword2));
 
                 } catch (FileNotFoundException e) {
@@ -173,14 +182,17 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-                if (mLoginPassword.get(0).equals(mLogin.getText().toString().trim()) &&
-                        mLoginPassword.get(1).equals(mPassword.getText().toString().trim())) {
-                    Toast.makeText(MainActivity.this, "Добро пожаловать : " + mLogin, Toast.LENGTH_LONG).show();
+                try {
+                    if (mLoginPassword.get(0).equals(fileLogin) &&
+                            mLoginPassword.get(1).equals(filePassword)) {
+                        Toast.makeText(MainActivity.this, "Добро пожаловать : " + fileLogin + " ваш пороль : " + filePassword, Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Вы ввели неправельно пароль!!! " + fileLogin, Toast.LENGTH_LONG).show();
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    Toast.makeText(MainActivity.this, "Такой учётной записи не существует. Вы можете зарегистрироваться. " + fileLogin, Toast.LENGTH_LONG).show();
                 }
 
-                else {
-                    Toast.makeText(MainActivity.this, "Вы ввели неправельно пароль!!!" + mLogin, Toast.LENGTH_LONG).show();
-                }
 
             }
         });
