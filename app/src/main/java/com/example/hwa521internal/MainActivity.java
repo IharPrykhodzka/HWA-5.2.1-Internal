@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -40,58 +39,95 @@ public class MainActivity extends AppCompatActivity {
         mPassword = findViewById(R.id.password);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegistration = findViewById(R.id.btnRegistration);
-        final String fileLogin = mLogin.getText().toString().trim();
-        final String filePassword = mPassword.getText().toString().trim();
 
         btnRegistration.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                String fileContents = fileLogin + "\n" + filePassword;
+                String fileLogin = mLogin.getText().toString().trim();
+                String filePassword = mPassword.getText().toString().trim();
                 FileOutputStream outputStream = null;
+                BufferedWriter bw = null;
+
                 Log.d(LOG, "Нажал на кнопку регестрации");
+                Log.d(LOG, "login =" + fileLogin);
+                Log.d(LOG, "password =" + filePassword);
 
+                FileInputStream mFIP = null;
                 try {
-                    if (!filePassword.equals("")) {
-                        outputStream = openFileOutput(fileLogin, Context.MODE_PRIVATE);
-                        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
-                        BufferedWriter bw = new BufferedWriter(outputStreamWriter);
-                        bw.write(fileContents);
-
-//                        outputStream.write(fileContents.getBytes());
-
-                        Toast.makeText(MainActivity.this, fileLogin + " успешно зарегистрирован", Toast.LENGTH_LONG).show();
-                        Log.d(LOG, "Создание и запись логина и пароля");
-                    } else {
-                        Toast.makeText(MainActivity.this, "Убедитесь, что вы заполнели все строки", Toast.LENGTH_LONG).show();
-                        Log.d(LOG, "Пустой пароль");
-                    }
-                } catch (Exception e) {
+                    mFIP = openFileInput(fileLogin);
+                } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                    Toast.makeText(MainActivity.this, "Убедитесь, что вы заполнели все строки", Toast.LENGTH_LONG).show();
-                    Log.d(LOG, "Ошибка создания и записи логина и пароля");
                 } finally {
-                    if (outputStream != null) {
+                    if (mFIP != null) {
                         try {
-                            outputStream.close();
-                            Log.d(LOG, "Закрыли поток outputStream");
+                            mFIP.close();
                         } catch (IOException e) {
                             e.printStackTrace();
-                            Log.d(LOG, "Ошибка закрытие патока outputStream");
                         }
                     }
                 }
+
+                if (mFIP == null) {
+
+                    try {
+                        if (!filePassword.equals("")) {
+                            String total = fileLogin + ";" + filePassword;
+                            outputStream = openFileOutput(fileLogin, Context.MODE_PRIVATE);
+                            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+                            bw = new BufferedWriter(outputStreamWriter);
+                            Log.d(LOG, "Запись: " + total);
+                            bw.write(total);
+
+                            Toast.makeText(MainActivity.this, fileLogin + " успешно зарегистрирован", Toast.LENGTH_LONG).show();
+                            Log.d(LOG, "Создание и запись логина и пароля");
+                        } else {
+                            Toast.makeText(MainActivity.this, "Убедитесь, что вы заполнели все строки", Toast.LENGTH_LONG).show();
+                            Log.d(LOG, "Пустой пароль");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, fileLogin + " " + filePassword, Toast.LENGTH_LONG).show();
+                        Log.d(LOG, "Ошибка создания и записи логина и пароля");
+                    } finally {
+                        if (bw != null) {
+                            try {
+                                bw.close();
+                                Log.d(LOG, "Закрыли поток BufferedWriter");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Log.d(LOG, "Ошибка закрытие патока BufferedWriter");
+                            }
+                        }
+
+                        if (outputStream != null) {
+                            try {
+                                outputStream.close();
+                                Log.d(LOG, "Закрыли поток outputStream");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Log.d(LOG, "Ошибка закрытие патока outputStream");
+                            }
+                        }
+                    }
+                }else {
+                    Toast.makeText(MainActivity.this, "Такой логин " + fileLogin + " уже существует.", Toast.LENGTH_LONG).show();
+                }
             }
         });
+
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
+                String fileLogin = mLogin.getText().toString().trim();
+                String filePassword = mPassword.getText().toString().trim();
                 FileInputStream fileInputStream = null;
                 StringBuilder result = null;
                 BufferedReader reader = null;
-                ArrayList<String> mLoginPassword = null;
+                String[] mLoginPassword2;
+                ArrayList<String> mLoginPassword = new ArrayList<>();
                 Log.d(LOG, "Нажал на кнопку логин");
 
                 try {
@@ -100,15 +136,19 @@ public class MainActivity extends AppCompatActivity {
                     InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
                     reader = new BufferedReader(inputStreamReader);
                     String line = reader.readLine();
-                    mLoginPassword = new ArrayList<>();
                     Log.d(LOG, "Пробуем прочитать учётную запись");
 
                     while (line != null) {
                         result.append(line);
-                        mLoginPassword.add(result.toString().trim());
+                        result.append(";");
                         line = reader.readLine();
                         Log.d(LOG, "Пробуем записать учетку в массив");
                     }
+
+                    String text = result.toString();
+                    Log.d(LOG, "Результат чтения: " + result.toString());
+                    mLoginPassword2 = text.split(";");
+                    mLoginPassword.addAll(Arrays.asList(mLoginPassword2));
 
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -142,15 +182,17 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-                assert mLoginPassword != null;
-                if (mLoginPassword.get(0).equals(mLogin.getText().toString().trim()) &&
-                        mLoginPassword.get(1).equals(mPassword.getText().toString().trim())) {
-                    Toast.makeText(MainActivity.this, "Добро пожаловать : " + mLogin, Toast.LENGTH_LONG).show();
+                try {
+                    if (mLoginPassword.get(0).equals(fileLogin) &&
+                            mLoginPassword.get(1).equals(filePassword)) {
+                        Toast.makeText(MainActivity.this, "Добро пожаловать : " + fileLogin + " ваш пороль : " + filePassword, Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Вы ввели неправельно пароль!!! " + fileLogin, Toast.LENGTH_LONG).show();
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    Toast.makeText(MainActivity.this, "Такой учётной записи не существует. Вы можете зарегистрироваться. " + fileLogin, Toast.LENGTH_LONG).show();
                 }
 
-                else {
-                    Toast.makeText(MainActivity.this, "Вы ввели неправельно пароль!!!" + mLogin, Toast.LENGTH_LONG).show();
-                }
 
             }
         });
